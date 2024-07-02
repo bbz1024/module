@@ -1,0 +1,46 @@
+apiVersion: v1 # api 版本
+kind: Pod # 资源对象类型，也可以配置为Deployment、StatefulSet这一类对象
+metadata: # Pod 相关的元数据，用于描述Pod
+  name: "my-nginx" #  Pod 名称
+  labels: # 自定义的标签
+    app: "blblbl"
+    cc: "123213"
+  namespace: "default"
+spec: # 规约]
+  terminationGracePeriodSeconds: 40 # 当Pod被删除时，允许等待的秒数，进行清理操作（优雅删除）默认30秒
+  containers: # 对于Pod中的容器描述
+    - name: "nginx-demo" # 容器名称
+      image: nginx # 容器镜像
+      imagePullPolicy: IfNotPresent  # 镜像拉取策略：Never（本地存在就使用不存在就报错）、Always（每次都进行拉去)、IfNotPresent（本地不存在就拉取，存在就使用）
+      command: [ "nginx","-g","daemon off;" ] # 指定容器启动时命令
+      workingDir: "/usr/local/nginx/html" # 定义进入容器的目录
+      ports:
+        - name: "http" # 端口名称
+          containerPort: 80 #描述容器内部暴露的端口
+          protocol: TCP #端口基于什么协议
+      env: # 环境变量
+        - name: ProjectMode
+          value: "dev"
+      resources:
+        requests: # 最少需要多少资源
+          cpu: 100m # 限制cpu最少使用百分之10的核心 0.1核心
+          memory: 100Mi # 限制内存最少使用100M
+        limits: # 最多
+          cpu: 200m # 最多使用百分之10的核心
+          memory: 256Mi # 最多使用256M
+      # 生命周期的配置
+      lifecycle:
+        postStart:
+          exec:
+            command:
+              - sh
+              - -c
+              - "echo start"
+        preStop: # 默认 terminationGracePeriodSeconds == 30 s，如果preStop 执行时间超过 terminationGracePeriodSeconds，则强制删除Pod
+          exec:
+            command:
+              - sh
+              - -c
+              - "sleep 5; echo stop"
+  restartPolicy: Always # 容器重启策略: Always(总是重启)、Never(不重启)、OnFailure(非0退出码重启)
+#  imagePullSecrets:  # 镜像仓库认证信息

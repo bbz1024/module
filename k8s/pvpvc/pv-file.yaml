@@ -1,0 +1,48 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-file
+  labels:
+    app: pv-file
+spec:
+  capacity:
+    storage: 5Gi # 存储大小
+  volumeMode: Filesystem # 存储类型
+  accessModes:
+    - ReadWriteOnce #只能被一个pvc使用
+  persistentVolumeReclaimPolicy: Recycle # 回收策略 Delete Recycle Retain
+  storageClassName: slow #创建pv的存储类名，需要与pvc相同
+  hostPath:
+    path: /data
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-file
+spec:
+  accessModes: # 必须与pv一致，否则匹配不到
+    - ReadWriteOnce
+  volumeMode: Filesystem # 必须与pv一致，否则匹配不到
+  resources:
+    requests:
+      storage: 2Gi # 申请的存储大小，但是不能超过上面的pv的存储大小，否则匹配不到
+  storageClassName: slow
+#  selector: # 也可以通过选择器选择对应的pv
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pv-file
+spec:
+  containers:
+    - name: nginx-pv
+      image: nginx
+      volumeMounts:
+        - mountPath: /temp/data # 挂载在容器里的路径
+          name: pv-file # 挂载那个volume
+  volumes:
+    - name: pv-file
+      persistentVolumeClaim:
+        claimName: pvc-file # 绑定pvc

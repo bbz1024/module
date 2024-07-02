@@ -1,0 +1,44 @@
+---
+# service 作用是通过 service 找到pod，暴露出端口
+apiVersion: v1
+kind: Service
+metadata:
+  name: "nginx"
+  labels:
+    app: nginx
+spec:
+  ports:
+    - name: web
+      port: 80
+  clusterIP: None
+  selector: # 通过选择器找到app为nginx的应用
+    app: nginx
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: web # stateful名称
+spec:
+  serviceName: "nginx" # 使用那个service管理dns
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx
+          ports:
+            - containerPort: 80 # 容器内部暴露的端口
+              name: web # 端口配置的名字
+
+  updateStrategy:
+    type: RollingUpdate # 实现灰度发布，金丝雀发布 ，当partition>=2的应用才会更新
+    rollingUpdate:
+      partition: 2
+#  updateStrategy:
+#    type: OnDelete # 删除时才会进行更新
+  selector:
+    matchLabels: # 选择器
+      app: nginx

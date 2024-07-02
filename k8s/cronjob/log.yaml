@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: record-log
+spec:
+  concurrencyPolicy: Allow # 允许多个任务同时运行，并发调度,Forbid: 不允许多个任务同时运行，串行调度,Replace: 允许多个任务同时运行，但是只保留最新的任务，新的会替换掉旧的
+  failedJobsHistoryLimit: 3 # 保留最近3个失败的任务
+  successfulJobsHistoryLimit: 3 # 保留最近3个成功的任务
+  startingDeadlineSeconds: 10 # 间隔多长时间检测失败的任务并且执行重试，时间不能小于10s
+  suspend: false # 是否挂起任务，如果为true，则任务不会被调度
+  schedule: "* * * * *" #	分、时、日、月、周
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: record-log
+              image: busybox:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - date; echo Hello!
+          restartPolicy: OnFailure

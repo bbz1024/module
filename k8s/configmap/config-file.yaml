@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: config-file
+  labels:
+    app: config-file
+spec:
+  containers:
+    - name: config-file
+      image: alpine
+      imagePullPolicy: IfNotPresent
+      command: ["/bin/sh", "-c", "sleep 3600"]
+      volumeMounts:
+        - mountPath: "/etc/redis" # 容器中的目录
+          name: redis-config # 需要指定数据卷名字也就是下面的volumes名字
+  volumes:
+    - name: redis-config # 数据卷名字随意
+      configMap:
+        name: redis-conf # 对应ConfigMap名称 必须相同
+        items: # 对应ConfigMap中的key映射，如果不指定，则默认映射所有key
+          - key: username # ConfigMap中的key
+            path: username1 # 映射到容器中的文件名
+
+  restartPolicy: Always
+  

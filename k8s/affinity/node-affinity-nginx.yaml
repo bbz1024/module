@@ -1,0 +1,65 @@
+apiVersion: apps/v1 # deployment api 版本
+kind: Deployment # 资源类型
+metadata: # 元信息
+  name: nginx-deploy
+  labels:
+    app: nginx1
+    type: gateway
+spec:
+  replicas: 1 # 期望副本数
+  revisionHistoryLimit: 10 # 保留历史版本
+  selector: # 匹配标签，用于找到匹配的replacementSet，也会创建一个 RS 资源类型的
+    matchLabels: # 匹配标签
+      app: nginx-deploy
+  template: # pod模板 也会创建一个 Pod 资源类型
+    metadata:
+      name: nginx-deploy
+      labels:
+        app: nginx-deploy
+    spec:
+      affinity:
+        # 亲和性, nodeAffinity: 节点亲和性, podAffinity: pod亲和性, podAntiAffinity: pod反亲和性
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution: # requiredDuringSchedulingIgnoredDuringExecution: 必选，调度期间忽略
+            nodeSelectorTerms: # 匹配条件 当node的label存在该type时才会进行选择
+              - matchExpressions: # 匹配条件
+                  - key: type # 键
+                    operator: In # 操作符 类似于SQL
+                    values:
+                      - SSD # 值
+                      - DISK
+                  #                 必须是linux系统才满足
+                  - key: kubernetes.io/os #
+                    operator: In
+                    values:
+                      - linux
+                  # 架构
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+          # 假设存在三个节点且三个节点都满足当前pod，那么会进行判断preferredDuringSchedulingIgnoredDuringExecution，
+          # 如果node2也满足那么就部署到node2上面，如果还是都满足那么就由k8s底层实现的算法进行调度了
+          preferredDuringSchedulingIgnoredDuringExecution: # preferredDuringSchedulingIgnoredDuringExecution: 优先级
+            - weight: 10  # 权重分数，当匹配一条时权重会+10，匹配完成会选择权重最高的node
+              preference:
+                matchExpressions: # 匹配条件
+                  - key: type # 键
+                    operator: In
+                    values:
+                      - SSD
+            - weight: 50
+              preference:
+                matchExpressions: # 匹配条件
+                  - key: type # 键
+                    operator: In
+                    values:
+                      - DISK
+
+
+      containers:
+        - name: nginx
+          image: nginx
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      

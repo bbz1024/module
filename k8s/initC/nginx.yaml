@@ -1,0 +1,36 @@
+apiVersion: apps/v1 # deployment api 版本
+kind: Deployment # 资源类型
+metadata: # 元信息
+  name: nginx-deploy
+  labels:
+    app: nginx1
+    type: gateway
+spec:
+
+  replicas: 1 # 期望副本数
+  revisionHistoryLimit: 10 # 保留历史版本
+  selector: # 匹配标签，用于找到匹配的replacementSet，也会创建一个 RS 资源类型的
+    matchLabels: # 匹配标签
+      app: nginx-deploy
+  strategy: # 更新策略
+    rollingUpdate: # 滚动更新
+      maxSurge: 25% # 滚动更新时，更新个数最多可以超过副本数的25%
+      maxUnavailable: 25% # 滚动更新时，表示在所有副本数中多少个副本不可用
+    type: RollingUpdate # 更新策略类型
+  template: # pod模板 也会创建一个 Pod 资源类型
+    metadata:
+      name: nginx-deploy
+      labels:
+        app: nginx-deploy
+    spec:
+      # 初始化容器
+      initContainers:
+        - name: init-test
+          image: nginx
+          imagePullPolicy: IfNotPresent
+          command: [ "/bin/sh", "-c", "sleep 10; echo 'init-test'" ]
+      containers:
+        - name: nginx
+          image: nginx
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always

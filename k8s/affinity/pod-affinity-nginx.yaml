@@ -1,0 +1,49 @@
+apiVersion: apps/v1 # deployment api 版本
+kind: Deployment # 资源类型
+metadata: # 元信息
+  name: nginx-deploy
+  labels:
+    app: nginx1
+    type: gateway
+spec:
+  replicas: 1 # 期望副本数
+  revisionHistoryLimit: 10 # 保留历史版本
+  selector: # 匹配标签，用于找到匹配的replacementSet，也会创建一个 RS 资源类型的
+    matchLabels: # 匹配标签
+      app: nginx-deploy
+  template: # pod模板 也会创建一个 Pod 资源类型
+    metadata:
+      name: nginx-deploy
+      labels:
+        app: nginx-deploy
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            # 这里存在两个条件:topologyKey 和 labelSelector
+            - topologyKey: kubernetes.io/hostname # topologyKey : 表示节点亲和性 (必须节点存在该标签)
+              labelSelector: # labelSelector : 表示pod亲和性 (必须pod存在该标签)
+                matchExpressions:
+                  - key: security
+                    operator: In
+                    values:
+                      - S1
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                    - key: security
+                      operator: In
+                      values:
+                        - S2
+
+
+      containers:
+        - name: nginx
+          image: nginx
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      
