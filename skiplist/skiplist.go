@@ -1,9 +1,7 @@
-package main
+package skiplist
 
 import (
-	"fmt"
 	"math"
-	"math/rand"
 )
 
 /*
@@ -25,7 +23,7 @@ type SkipList struct {
 	Head     *SkipNode
 	Level    int         // 当前跳表索引层数
 	Random   func() bool // 用于判断是否建立索引
-	MaxLevel int         //最大层，MaxLevel越大所建造的索引越大，占用的空间也越大
+	MaxLevel int         // 最大层，MaxLevel越大所建造的索引越大，占用的空间也越大
 }
 
 func NewSkipList(random func() bool, maxLevel int) *SkipList {
@@ -36,21 +34,20 @@ func NewSkipList(random func() bool, maxLevel int) *SkipList {
 	}
 }
 func (s *SkipList) Add(k int, v interface{}) {
-
-	//update
+	// if exist to update
 	node := s.search(k)
 	if node != nil {
 		node.IsDelete = false
 		node.Val = v
 		return
 	}
-	//set
+	// set
+	var stack []*SkipNode
 	dummy := SkipNode{
 		Right: s.Head,
 	}
-	var stack []*SkipNode
 	cur := dummy.Right // head
-	//找了插入的前一个节点
+	// find the insert position
 	for cur != nil {
 		if cur.Right == nil { //右边没有向下操作
 			stack = append(stack, cur)
@@ -115,7 +112,6 @@ func (s *SkipList) Search(key int) *SkipNode {
 	}
 	return nil
 }
-
 func (s *SkipList) Delete(key int) (node *SkipNode) {
 	dummy := SkipNode{Right: s.Head}
 	cur := dummy.Right
@@ -125,9 +121,8 @@ func (s *SkipList) Delete(key int) (node *SkipNode) {
 		} else if cur.Right.Key > key {
 			cur = cur.Down
 		} else if cur.Right.Key == key {
-
 			node = cur.Right
-			//cur.Right = cur.Right.Right
+			//cur.Right = cur.Right.Right // 清理节点
 			cur.Right.IsDelete = true
 			cur = cur.Down
 		} else {
@@ -135,20 +130,4 @@ func (s *SkipList) Delete(key int) (node *SkipNode) {
 		}
 	}
 	return
-}
-func main() {
-	skipList := NewSkipList(func() bool {
-		return rand.Float32() > 0.5
-	}, 5)
-	skipList.Add(1, 1)
-	skipList.Add(2, 2)
-	skipList.Add(3, 3)
-	skipList.Add(4, 4)
-	skipList.Add(4, 8)
-	fmt.Println(skipList.Search(4))
-	fmt.Println(skipList.Delete(4))
-	fmt.Println(skipList.Search(4))
-	skipList.Add(4, 8)
-	fmt.Println(skipList.Search(4))
-
 }
